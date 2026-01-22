@@ -45,7 +45,25 @@ class UserDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'fullname']
 
 
-class TaskSerializer(serializers.ModelSerializer):
+class TaskListSerializer(serializers.ModelSerializer):
+    board = serializers.PrimaryKeyRelatedField(read_only=True)
+    assignee = UserDetailSerializer(read_only=True)
+    reviewer = UserDetailSerializer(read_only=True)
+    comments_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'board', 'title', 'description', 'status', 'priority',
+            'assignee', 'reviewer', 'due_date', 'comments_count'
+        ]
+
+    def get_comments_count(self, obj):
+        return obj.comments.count()
+
+
+
+class TaskCreateSerializer(serializers.ModelSerializer):
     board_id = serializers.PrimaryKeyRelatedField(
         queryset=Board.objects.all(),
         source='board',
@@ -54,7 +72,7 @@ class TaskSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
-    board = BoardSerializer(read_only=True)
+    board = serializers.PrimaryKeyRelatedField(read_only=True)
 
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -81,10 +99,9 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
-            'id', 'title', 'description',  'status', 'priority',
-            'assignee',  'reviewer',
-            'due_date', 'comments_count',
-            'board_id', 'board',  'reviewer_id', 'assignee_id',
+            'id', 'board', 'title', 'description', 'status', 'priority',
+            'assignee', 'reviewer', 'due_date', 'comments_count',
+            'board_id', 'reviewer_id', 'assignee_id',
         ]
 
     def validate(self, data):
@@ -116,10 +133,60 @@ class TaskSerializer(serializers.ModelSerializer):
         return obj.comments.count()
 
 
+class TaskUpdateSerializer(serializers.ModelSerializer):
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='assignee',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+    assignee = UserDetailSerializer(read_only=True)
+
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='reviewer',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+    reviewer = UserDetailSerializer(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'title', 'description', 'status', 'priority',
+            'assignee', 'reviewer', 'due_date',
+            'reviewer_id', 'assignee_id',
+        ]
+
+    def validate(self, data):
+        board = self.instance.board  
+
+        assignee = data.get('assignee')
+        reviewer = data.get('reviewer')
+
+        if assignee:
+            is_member = board.members.filter(id=assignee.id).exists()
+            is_owner = (board.owner == assignee)
+            if not (is_member or is_owner):
+                raise serializers.ValidationError(
+                    {"assignee_id": "User is not a member of this board."})
+
+        if reviewer:
+            is_member = board.members.filter(id=reviewer.id).exists()
+            is_owner = (board.owner == reviewer)
+            if not (is_member or is_owner):
+                raise serializers.ValidationError(
+                    {"reviewer_id": "User is not a member of this board."})
+
+        return data
 class BoardDetailSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(source='owner.id', read_only=True)
     members = UserDetailSerializer(many=True, read_only=True)
-    tasks = TaskSerializer(many=True, read_only=True)
+    tasks = TaskListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board
@@ -132,7 +199,7 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
     )
     owner_data = UserDetailSerializer(source='owner', read_only=True)
     members_data = UserDetailSerializer(source='members', many=True, read_only=True)
-    tasks = TaskSerializer(many=True, read_only=True)
+    tasks = TaskListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board

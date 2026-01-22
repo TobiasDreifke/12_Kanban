@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
-from .serializers import BoardUpdateSerializer, CommentSerializer, TaskSerializer
+from .serializers import BoardUpdateSerializer, CommentSerializer, TaskCreateSerializer, TaskListSerializer,  TaskUpdateSerializer
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -13,7 +13,6 @@ from .permissions import IsAuthor, IsBoardMemberOrOwner, IsMemberOfTaskBoard
 from .serializers import (
     BoardSerializer,
     BoardDetailSerializer,
-    TaskSerializer,
     UserDetailSerializer,
 )
 
@@ -33,7 +32,7 @@ class BoardListCreateView(generics.ListCreateAPIView):
 class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Board.objects.all()
     permission_classes = [IsBoardMemberOrOwner]
-    
+
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return BoardUpdateSerializer
@@ -65,23 +64,25 @@ class EmailCheckView(APIView):
 
 
 class AssignedTaskView(generics.ListAPIView):
+    serializer_class = TaskListSerializer
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         user = self.request.user
         return Task.objects.filter(assignee=user).distinct()
-    serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class ReviewerTaskView(generics.ListAPIView):
+    serializer_class = TaskListSerializer
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         user = self.request.user
         return Task.objects.filter(reviewer=user).distinct()
-    serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
 
 
 class TaskCreateView(generics.CreateAPIView):
-    serializer_class = TaskSerializer
+    serializer_class = TaskCreateSerializer
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -100,13 +101,28 @@ class TaskCreateView(generics.CreateAPIView):
 
 class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
-    serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated, IsMemberOfTaskBoard]
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return TaskUpdateSerializer
+        return TaskCreateSerializer
 
     def perform_update(self, serializer):
         if 'board' in serializer.validated_data:
             serializer.validated_data.pop('board')
         serializer.save()
+
+
+# class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = Task.objects.all()
+#     serializer_class = TaskSerializer
+#     permission_classes = [IsAuthenticated, IsMemberOfTaskBoard]
+
+#     def perform_update(self, serializer):
+#         if 'board' in serializer.validated_data:
+#             serializer.validated_data.pop('board')
+#         serializer.save()
 
 
 class CommentView(generics.ListCreateAPIView):
