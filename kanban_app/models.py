@@ -16,7 +16,8 @@ class Task(models.Model):
     STATUS_CHOICES = [
         ('to-do', 'To Do'),
         ('in-progress', 'In Progress'),
-        ('done', 'Done')
+        ('done', 'Done'),
+        ('review', 'Review')
     ]
     PRIO_CHOICES = [
         ('low', 'Low'),
