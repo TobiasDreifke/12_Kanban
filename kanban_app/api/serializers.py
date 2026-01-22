@@ -81,11 +81,10 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = [
-            'id', 'board', 'board_id',
-            'title', 'description', 'status', 'priority',
-            'assignee', 'assignee_id',
-            'reviewer', 'reviewer_id',
-            'due_date', 'comments_count'
+            'id', 'title', 'description',  'status', 'priority',
+            'assignee',  'reviewer',
+            'due_date', 'comments_count',
+            'board_id', 'board',  'reviewer_id', 'assignee_id',
         ]
 
     def validate(self, data):
@@ -121,17 +120,17 @@ class BoardDetailSerializer(serializers.ModelSerializer):
     members = serializers.PrimaryKeyRelatedField(
         many=True, queryset=User.objects.all(), write_only=True
     )
-
-    owner_data = UserDetailSerializer(source='owner', read_only=True)
-    members_data = UserDetailSerializer(
-        source='members', many=True, read_only=True)
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True)
+    # owner = UserDetailSerializer(source='owner', read_only=True)
+    # members = UserDetailSerializer(
+    #     source='members', many=True, read_only=True)
 
     tasks = TaskSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'owner_data',
-                  'members', 'members_data', 'tasks']
+        fields = ['id', 'title', 'owner_id',
+                  'members', 'tasks']
 
 
 class CommentSerializer(serializers.ModelSerializer):
