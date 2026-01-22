@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
-from .serializers import CommentSerializer, TaskSerializer
+from .serializers import BoardUpdateSerializer, CommentSerializer, TaskSerializer
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -32,8 +32,12 @@ class BoardListCreateView(generics.ListCreateAPIView):
 
 class BoardDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Board.objects.all()
-    serializer_class = BoardDetailSerializer
     permission_classes = [IsBoardMemberOrOwner]
+    
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return BoardUpdateSerializer
+        return BoardDetailSerializer
 
 
 class EmailCheckView(APIView):

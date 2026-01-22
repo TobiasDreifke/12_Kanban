@@ -117,21 +117,26 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
-    members = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.all(), write_only=True
-    )
     owner_id = serializers.IntegerField(source='owner.id', read_only=True)
-    # owner = UserDetailSerializer(source='owner', read_only=True)
-    # members = UserDetailSerializer(
-    #     source='members', many=True, read_only=True)
-
+    members = UserDetailSerializer(many=True, read_only=True)
     tasks = TaskSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'owner_id',
-                  'members', 'tasks']
+        fields = ['id', 'title', 'owner_id', 'members', 'tasks']
 
+
+class BoardUpdateSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=User.objects.all(), write_only=True
+    )
+    owner_data = UserDetailSerializer(source='owner', read_only=True)
+    members_data = UserDetailSerializer(source='members', many=True, read_only=True)
+    tasks = TaskSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Board
+        fields = ['id', 'title', 'owner_data', 'members', 'members_data', 'tasks']
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source='author.first_name')
