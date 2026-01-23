@@ -62,17 +62,20 @@ class TaskListSerializer(serializers.ModelSerializer):
         return obj.comments.count()
 
 
-
 class TaskCreateSerializer(serializers.ModelSerializer):
     board_id = serializers.PrimaryKeyRelatedField(
         queryset=Board.objects.all(),
         source='board',
         write_only=True,
-        required=False,
-        allow_null=True
+        required=True,  
+        allow_null=False, 
+        error_messages={
+            'does_not_exist': 'Board with id {pk_value} does not exist.',
+            'required': 'This field is required.'
+        }
     )
 
-    board = serializers.PrimaryKeyRelatedField(read_only=True)
+    board = serializers.PrimaryKeyRelatedField(queryset=Board.objects.all())
 
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
@@ -163,7 +166,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        board = self.instance.board  
+        board = self.instance.board
 
         assignee = data.get('assignee')
         reviewer = data.get('reviewer')
@@ -183,6 +186,8 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
                     {"reviewer_id": "User is not a member of this board."})
 
         return data
+
+
 class BoardDetailSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(source='owner.id', read_only=True)
     members = UserDetailSerializer(many=True, read_only=True)
@@ -198,12 +203,15 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
         many=True, queryset=User.objects.all(), write_only=True
     )
     owner_data = UserDetailSerializer(source='owner', read_only=True)
-    members_data = UserDetailSerializer(source='members', many=True, read_only=True)
+    members_data = UserDetailSerializer(
+        source='members', many=True, read_only=True)
     tasks = TaskListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board
-        fields = ['id', 'title', 'owner_data', 'members', 'members_data', 'tasks']
+        fields = ['id', 'title', 'owner_data',
+                  'members', 'members_data', 'tasks']
+
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source='author.first_name')
