@@ -63,17 +63,17 @@ class TaskListSerializer(serializers.ModelSerializer):
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
-    board_id = serializers.PrimaryKeyRelatedField(
-        queryset=Board.objects.all(),
-        source='board',
-        write_only=True,
-        required=True,  
-        allow_null=False, 
-        error_messages={
-            'does_not_exist': 'Board with id {pk_value} does not exist.',
-            'required': 'This field is required.'
-        }
-    )
+    # board_id = serializers.PrimaryKeyRelatedField(
+    #     queryset=Board.objects.all(),
+    #     source='board',
+    #     write_only=True,
+    #     required=True,  
+    #     allow_null=False, 
+    #     error_messages={
+    #         'does_not_exist': 'Board with id {pk_value} does not exist.',
+    #         'required': 'This field is required.'
+    #     }
+    # )
 
     board = serializers.PrimaryKeyRelatedField(queryset=Board.objects.all())
 
