@@ -30,7 +30,4 @@ class IsMemberOfTaskBoard(permissions.BasePermission):
 
 class IsAuthor(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        if request.method == 'DELETE':
-            return obj.owner == request.user
-        
-        return obj.owner == request.user or obj.members.filter(id=request.user.id).exists()
+        return obj.author == request.user

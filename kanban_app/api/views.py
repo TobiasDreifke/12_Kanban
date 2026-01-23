@@ -138,4 +138,6 @@ class CommentDetailView(generics.RetrieveDestroyAPIView):
     def get_object(self):
         task_id = self.kwargs.get('task_id')
         comment_id = self.kwargs.get('comment_id')
-        return get_object_or_404(Comment, id=comment_id, task_id=task_id)
+        obj = get_object_or_404(Comment, id=comment_id, task_id=task_id)
+        self.check_object_permissions(self.request, obj)  
+        return obj
