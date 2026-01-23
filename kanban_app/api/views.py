@@ -95,6 +95,7 @@ class TaskCreateView(generics.CreateAPIView):
         if not (is_member or is_owner):
             raise PermissionDenied(
                 "You must be a member or owner of the board to create tasks.")
+        
 
         serializer.save()
 
@@ -112,17 +113,6 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
         if 'board' in serializer.validated_data:
             serializer.validated_data.pop('board')
         serializer.save()
-
-
-# class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = Task.objects.all()
-#     serializer_class = TaskSerializer
-#     permission_classes = [IsAuthenticated, IsMemberOfTaskBoard]
-
-#     def perform_update(self, serializer):
-#         if 'board' in serializer.validated_data:
-#             serializer.validated_data.pop('board')
-#         serializer.save()
 
 
 class CommentView(generics.ListCreateAPIView):
