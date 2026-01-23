@@ -1,9 +1,17 @@
+"""Serializers for kanban_app API.
+
+Convert model instances (Board, Task, Comment) and User data to and
+from JSON representations used by the REST API. Includes create/update
+validation rules specific to the domain (e.g., board membership checks).
+"""
+
 from rest_framework import serializers
 from ..models import Board, Task, Comment
 from django.contrib.auth.models import User
 
 
 class BoardSerializer(serializers.ModelSerializer):
+    """Serializer for Board model with summary fields."""
     member_count = serializers.SerializerMethodField()
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
@@ -25,19 +33,24 @@ class BoardSerializer(serializers.ModelSerializer):
         ]
 
     def get_member_count(self, obj):
+        """Return the number of members on the board."""
         return obj.members.count()
 
     def get_ticket_count(self, obj):
+        """Return the number of tasks associated with the board."""
         return obj.tasks.count()
 
     def get_tasks_to_do_count(self, obj):
+        """Return count of tasks with status 'to-do' on the board."""
         return obj.tasks.filter(status='to-do').count()
 
     def get_tasks_high_prio_count(self, obj):
+        """Return count of high priority tasks on the board."""
         return obj.tasks.filter(priority='high').count()
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    """Compact user representation used in nested serializer fields."""
     fullname = serializers.CharField(source='first_name')
 
     class Meta:
@@ -46,6 +59,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
+    """Lightweight task serializer for list endpoints."""
     board = serializers.PrimaryKeyRelatedField(read_only=True)
     assignee = UserDetailSerializer(read_only=True)
     reviewer = UserDetailSerializer(read_only=True)
@@ -59,21 +73,12 @@ class TaskListSerializer(serializers.ModelSerializer):
         ]
 
     def get_comments_count(self, obj):
+        """Return number of comments attached to the task."""
         return obj.comments.count()
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
-    # board_id = serializers.PrimaryKeyRelatedField(
-    #     queryset=Board.objects.all(),
-    #     source='board',
-    #     write_only=True,
-    #     required=True,  
-    #     allow_null=False, 
-    #     error_messages={
-    #         'does_not_exist': 'Board with id {pk_value} does not exist.',
-    #         'required': 'This field is required.'
-    #     }
-    # )
+    """Serializer used to create tasks, validates board membership."""
 
     board = serializers.PrimaryKeyRelatedField(queryset=Board.objects.all())
 
@@ -108,6 +113,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        """Validate assignee and reviewer are members or owner of the board."""
         board = data.get('board')
 
         if board is None and self.instance:
@@ -137,6 +143,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
 
 
 class TaskUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating tasks with assignee/reviewer helpers."""
     assignee_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
         source='assignee',
@@ -166,6 +173,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        """Validate updates ensure assignee/reviewer belong to the task's board."""
         board = self.instance.board
 
         assignee = data.get('assignee')
@@ -189,6 +197,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
+    """Detailed board serializer including members and tasks."""
     owner_id = serializers.IntegerField(source='owner.id', read_only=True)
     members = UserDetailSerializer(many=True, read_only=True)
     tasks = TaskListSerializer(many=True, read_only=True)
@@ -199,6 +208,7 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class BoardUpdateSerializer(serializers.ModelSerializer):
+    """Serializer used to update board membership and title."""
     members = serializers.PrimaryKeyRelatedField(
         many=True, queryset=User.objects.all(), write_only=True
     )
@@ -214,6 +224,7 @@ class BoardUpdateSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for comments displayed in task contexts."""
     author = serializers.ReadOnlyField(source='author.first_name')
 
     class Meta:

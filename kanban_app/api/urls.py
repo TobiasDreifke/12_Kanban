@@ -1,3 +1,8 @@
+"""URL routes for the kanban_app REST API.
+
+Defines endpoints for boards, tasks and task comments. These routes are
+included into the project's main URL configuration under the `api/` path.
+"""
 
 from django.urls import path
 

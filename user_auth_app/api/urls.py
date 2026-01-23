@@ -1,3 +1,8 @@
+"""URL routes for user authentication API.
+
+Defines registration, login and logout endpoints and is intended to be
+included under the project's `api/` prefix.
+"""
 
 from django.urls import path
 

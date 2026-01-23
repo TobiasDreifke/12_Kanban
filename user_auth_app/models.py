@@ -1,3 +1,10 @@
+"""Models for user authentication and profiles.
+
+Contains a `UserProfile` model that can be used to extend or wrap the
+built-in Django `User` model. The project primarily uses the auth
+system via `django.contrib.auth` and token authentication.
+"""
+
 from django.db import models
 from django.contrib.auth.models import User
 

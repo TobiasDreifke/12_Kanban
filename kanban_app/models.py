@@ -1,8 +1,16 @@
+"""Models for the Kanban app.
+
+This module defines the data models used by the kanban_app: Board, Task
+and Comment. These represent boards, tasks/tickets and threaded comments
+attached to tasks. Models reference Django's built-in `User` model.
+"""
+
 from django.db import models
 from django.contrib.auth.models import User
 
 
 class Board(models.Model):
+    """A kanban board with an owner and members."""
     title = models.CharField(max_length=100)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='owned_boards')
@@ -13,6 +21,7 @@ class Board(models.Model):
 
 
 class Task(models.Model):
+    """A task/ticket that belongs to a board with status and priority."""
     STATUS_CHOICES = [
         ('to-do', 'To Do'),
         ('in-progress', 'In Progress'),
@@ -46,6 +55,7 @@ class Task(models.Model):
 
 
 class Comment(models.Model):
+    """A comment left by a user on a task."""
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='comments')
@@ -54,7 +64,7 @@ class Comment(models.Model):
         Task, on_delete=models.CASCADE, related_name='comments')
 
     class Meta:
-        ordering = ['-created_at'] 
+        ordering = ['-created_at']
         verbose_name = "Comment"
         verbose_name_plural = "Comments"
 
